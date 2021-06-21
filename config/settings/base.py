@@ -10,6 +10,8 @@ env = environ.Env()
 # Base
 DEBUG = env.bool('DJANGO_DEBUG', False)
 
+#? Para generar autofield Django
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # Language and timezone
 TIME_ZONE = 'America/Mexico_City'
 LANGUAGE_CODE = 'en-us'
@@ -30,6 +32,9 @@ ROOT_URLCONF = 'config.urls'
 # WSGI
 WSGI_APPLICATION = 'config.wsgi.application'
 
+#users % Autentifications
+AUTH_USER_MODEL = 'users.Users'
+
 # Apps
 DJANGO_APPS = [
     'django.contrib.auth',
@@ -41,10 +46,22 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    'rest_framework',
+    'rest_framework.authtoken'
 ]
 LOCAL_APPS = [
+    'cride.users.apps.UsersAppConfig',
+    'cride.circles.apps.CircleAppConfig'
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+#*- DJANGO REST FRAMEWORK
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ]
+}
 
 # Passwords
 PASSWORD_HASHERS = [
