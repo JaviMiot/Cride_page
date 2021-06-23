@@ -16,6 +16,10 @@ class Circle(CRideModel):
     about = models.CharField('circle description', max_length=255)
     picture = models.ImageField(upload_to='circles/picture', blank=True, null=True, )
 
+    members = models.ManyToManyField(
+        'users.Users',
+        through='circles.Membership',
+        through_fields=('circle', 'user'),)
     # stats
     rides_offered = models.PositiveBigIntegerField(default=0)
     rides_taken = models.PositiveBigIntegerField(default=0)
@@ -41,11 +45,8 @@ class Circle(CRideModel):
         help_text='if circleis limited this will be the limit on the number of members'
     )
 
-
     class Meta(CRideModel.Meta):
-        ordering = ['-rides_taken','-rides_offered']
-
-
+        ordering = ['-rides_taken', '-rides_offered']
 
     def __str__(self):
         return self.name
