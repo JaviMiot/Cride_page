@@ -1,12 +1,10 @@
-from django.urls import path
-from cride.users.views import (
-    UserLoginAPIView,
-    UserSignupAPIView,
-    AccountVerifyAPIView
-)
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from cride.users.views import users as users_views
+
+router = DefaultRouter()
+router.register(r'users', users_views.UserViewSet, basename='users')
 
 urlpatterns = [
-    path('users/login/', UserLoginAPIView.as_view(), name='login'),
-    path('users/signup/', UserSignupAPIView.as_view(), name='signup'),
-    path('users/verify/', AccountVerifyAPIView.as_view(), name='verify')
+    path('',include(router.urls))
 ]

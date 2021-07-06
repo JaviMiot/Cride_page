@@ -41,7 +41,7 @@ class Membership(models.Model):
     # * status
     is_active = models.BooleanField(
         'active status',
-        default=False,
+        default=True,
         help_text='Only active users are allowed to interact in the circle'
     )
 

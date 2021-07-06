@@ -16,8 +16,12 @@ from django.conf import settings
 # * models
 from cride.users.models import Users, Profiles
 
+from cride.users.serializers.profile import ProfileModelSerializer
+
 
 class UserModelSerializer(serializers.ModelSerializer):
+    profiles = ProfileModelSerializer(read_only=True)
+
     class Meta:
         model = Users
         fields = (
@@ -25,7 +29,8 @@ class UserModelSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'email',
-            'phone_number'
+            'phone_number',
+            'profiles'
         )
 
 
@@ -121,7 +126,7 @@ class UserSignupSerializer(serializers.Serializer):
 
         data.pop('passwordConfirmation')
         # * para verificar que este verificado
-        user = Users.objects.create_user(**data, is_verified=False)
+        user = Users.objects.create_user(**data, is_verified=False, is_cliente=True)
         profile = Profiles.objects.create(users=user)
         self.send_confirmation_email(user=user)
         return user
@@ -199,7 +204,7 @@ class AccountVerifySerializer(serializers.Serializer):
             raise serializers.ValidationError('Invalid Token Py')
         if payload['type'] != 'email_confirmation':
             raise serializers.ValidationError('Invalid Token')
-        
+
         self.context['payload'] = payload
         return data
 
@@ -214,9 +219,11 @@ class AccountVerifySerializer(serializers.Serializer):
             [type]: [description]
         """
         payload = self.context['payload']
-        user =  Users.objects.get(username=payload['user'])
-        user.is_verified =  True
+        user = Users.objects.get(username=payload['user'])
+        user.is_verified = True
         user.save()
+
+
 class UserLoginSerializer(serializers.Serializer):
     """user login serializer
     handle the login request data

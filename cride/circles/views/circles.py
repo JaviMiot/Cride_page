@@ -1,8 +1,8 @@
 
-#* Circles views 
+# * Circles views
 
-#* django rest 
-from rest_framework import viewsets
+# * django rest
+from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 
 from cride.circles.models import Circle
@@ -10,7 +10,20 @@ from cride.circles.models import Circle
 from cride.circles.serializers import CircleModelSerializer
 
 from cride.circles.models import Membership
-class CirclesViewSet(viewsets.ModelViewSet):
+
+from cride.circles.permissions import isCircleAdmin
+
+# *filters
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
+#! en este caso hereda excepto el destroy
+
+
+class CirclesViewSet(mixins.CreateModelMixin,
+                     mixins.RetrieveModelMixin,
+                     mixins.UpdateModelMixin,
+                     mixins.ListModelMixin,
+                     viewsets.GenericViewSet):
     """circle view set
 
     Args:
@@ -19,8 +32,18 @@ class CirclesViewSet(viewsets.ModelViewSet):
 
     queryset = Circle.objects.all()
     serializer_class = CircleModelSerializer
-    #* Para ver si esta con token el usuario
-    permission_classes = [IsAuthenticated]
+    lookup_field = 'slug_name'  # * la url cambia y se llama por el slug name
+
+    # *filters
+    filter_backends = [SearchFilter, OrderingFilter,DjangoFilterBackend]
+    search_fields = ['slug_name', 'name']
+    ordering_fields = ['rides_offered', 'rides_taken',
+                       'name', 'created', 'member_limit']
+
+    # * cambiar orden por defauld
+    ordering = ['-members__count', '-rides_offered', '-rides_taken']
+
+    filter_fields = ['verified', 'is_limited']
 
     def get_queryset(self):
         """rtestick publict only"""
@@ -32,14 +55,23 @@ class CirclesViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def perform_create(self,serializer):
+    def get_permissions(self):
+        """Assign permissions based on actions
+        """
+        permissions = [IsAuthenticated]
+        if self.action in ['update', 'partial_update']:
+            permissions.append(isCircleAdmin)
+
+        return [permission() for permission in permissions]
+
+    def perform_create(self, serializer):
         """Assign circle admin
 
         Args:
             serializer ([type]): [description]
         """
 
-        circle =  serializer.save()
+        circle = serializer.save()
         user = self.request.user
         profile = user.profiles
         Membership.objects.create(

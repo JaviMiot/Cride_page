@@ -15,6 +15,7 @@ djangorestframework==3.12.4
 
 # Passwords security
 argon2-cffi
+django-filter>=2.4.0
 
 # Static files
 whitenoise==4.1.2
