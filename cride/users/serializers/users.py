@@ -6,17 +6,15 @@ from rest_framework.validators import UniqueValidator
 
 from django.core.validators import RegexValidator
 from django.contrib.auth import authenticate, password_validation
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
 
-from django.utils import timezone
-from datetime import timedelta
-import jwt
 from django.conf import settings
 # * models
 from cride.users.models import Users, Profiles
 
 from cride.users.serializers.profile import ProfileModelSerializer
+
+# * task celery
+from cride.taskapp.tasks import send_confirmation_email
 
 
 class UserModelSerializer(serializers.ModelSerializer):
@@ -128,55 +126,8 @@ class UserSignupSerializer(serializers.Serializer):
         # * para verificar que este verificado
         user = Users.objects.create_user(**data, is_verified=False, is_cliente=True)
         profile = Profiles.objects.create(users=user)
-        self.send_confirmation_email(user=user)
+        send_confirmation_email.delay(user_pk=user.pk)
         return user
-
-    def send_confirmation_email(self, user):
-        """send confirmation verification link to given user
-
-        Args:
-            user ([type]): [description]
-
-        Raises:
-            serializers.ValidationError: [description]
-            serializers.ValidationError: [description]
-
-        Returns:
-            [type]: [description]
-        """
-        verification_token = self.gen_verification_token(user)
-        subject = f'Welcome @{user.username} verify your count to start using Comparte Ride'
-        from_email = 'Comparte Ride <noreply@comparteride.com>'
-        content = render_to_string(
-            'emails/users/account_verification.html',
-            {'token': verification_token, 'user': user}
-        )
-        msg = EmailMultiAlternatives(subject, content, from_email, [user.email])
-        msg.attach_alternative(content, "text/html")
-        msg.send()
-
-    def gen_verification_token(self, user):
-        """create JWT token taht user can use to verify its count
-
-        Args:
-            user ([type]): [description]
-
-        Raises:
-            serializers.ValidationError: [description]
-            serializers.ValidationError: [description]
-
-        Returns:
-            [type]: [description]
-        """
-        exp_data = timezone.now() + timedelta(days=3)
-        payload = {
-            'user': user.username,
-            'exp': int(exp_data.timestamp()),
-            'type': 'email_confirmation'
-        }
-
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
-        return token
 
 
 class AccountVerifySerializer(serializers.Serializer):
